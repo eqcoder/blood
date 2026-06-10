@@ -6,3 +6,4 @@ langchain
 langchain-community
 python-dotenv
 flask
+langchain-openai
