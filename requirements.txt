@@ -8,3 +8,5 @@ python-dotenv
 flask
 langchain-openai
 chromadb
+pypdf
+tiktoken

@@ -3,7 +3,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from flask import Flask, request, jsonify, send_file
 from openai import OpenAI
 import os
 # LangChain 문서 로더 및 텍스트 스플리터
@@ -15,7 +14,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-app = Flask(__name__)
+app = FastAPI(title="헌혈 도우미 챗봇 API - 문서 연동 버전")
 DATA_DIR = "./data"
 DB_DIR = "./chroma_db"
 MODEL_PATH = "model.pkl"
@@ -25,6 +24,13 @@ client = OpenAI(
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 # CORS 설정 (모바일 및 외부 접속 허용)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # =========================================================================
 # [중요] 1. 다중 파일 및 다양한 포맷(.txt, .pdf) 문서 자동 로드 시스템
@@ -121,21 +127,7 @@ rag_chain = (
 # =========================================================================
 class ChatRequest(BaseModel):
     message: str
-@app.route("/")
-def home():
-    return send_file("index.html")
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.json
 
-    response = client.responses.create(
-        model="gpt-5",
-        input=data["message"]
-    )
-
-    return jsonify({
-        "reply": response.output_text
-    })
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     try:
@@ -150,5 +142,6 @@ async def get_index():
         return f.read()
 
 if __name__ == "__main__":
+    import uvicorn
     # 외부 기기(휴대폰 등)에서 접속할 수 있도록 0.0.0.0 으로 개방합니다.
-    app.run(host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
