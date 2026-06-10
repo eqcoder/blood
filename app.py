@@ -25,13 +25,6 @@ client = OpenAI(
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 # CORS 설정 (모바일 및 외부 접속 허용)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # =========================================================================
 # [중요] 1. 다중 파일 및 다양한 포맷(.txt, .pdf) 문서 자동 로드 시스템
