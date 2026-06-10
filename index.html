@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헌혈 도우미 챗봇</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 모바일 스크롤바 숨기기 및 부드러운 스크롤 */
+        .chat-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chat-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 flex justify-center items-center h-screen w-screen m-0 overflow-hidden font-sans">
+
+    <div
+        class="w-full max-w-md h-full md:h-[85vh] bg-white shadow-xl md:rounded-2xl flex flex-col relative overflow-hidden border border-slate-100">
+
+        <div class="bg-rose-600 text-white p-4 flex items-center justify-between shadow-md z-10">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="bg-white text-rose-600 rounded-full w-10 h-10 flex items-center justify-center shadow-inner">
+                    <i class="fa-solid fa-heart-pulse text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-wide">헌혈 도우미</h1>
+                    <p class="text-xs text-rose-100 flex items-center">
+                        <span class="w-2 h-2 bg-emerald-400 rounded-full mr-1.5 inline-block animate-ping"></span> 실시간
+                        상담 중
+                    </p>
+                </div>
+            </div>
+            <button onclick="clearChat()" class="text-rose-100 hover:text-white transition-colors p-1" title="대화 초기화">
+                <i class="fa-solid fa-rotate-right text-lg"></i>
+            </button>
+        </div>
+
+        <div id="chat-box" class="chat-container flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            <div class="flex items-start space-x-2.5">
+                <div
+                    class="bg-rose-100 text-rose-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div
+                    class="bg-white text-slate-800 p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%] text-sm leading-relaxed border border-slate-100">
+                    안녕하세요! 따뜻한 마음을 나누는 헌혈 도우미입니다. 🩸<br>
+                    헌혈 조건, 준비물, 다음 헌혈 가능일 등 궁금한 점을 편하게 물어보세요!
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 bg-white border-t border-slate-200 shadow-lg bottom-0 w-full">
+            <form id="chat-form" onsubmit="sendMessage(event)" class="flex items-center space-x-2">
+                <input type="text" id="user-input" placeholder="메시지를 입력하세요..."
+                    class="flex-1 bg-slate-100 text-slate-800 placeholder-slate-400 text-sm rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all"
+                    required autocomplete="off">
+                <button type="submit" id="send-btn"
+                    class="bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-full w-11 h-11 flex items-center justify-center transition-all shadow-md focus:outline-none">
+                    <i class="fa-solid fa-paper-plane text-sm ml-0.5"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // 메시지 렌더링 함수
+        // 기존 index.html의 appendMessage 함수를 이 코드로 교체하세요.
+        function appendMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = sender === 'user' ? 'flex items-end justify-end space-x-2' : 'flex items-start space-x-2.5';
+
+            // 💡 [핵심 변환 로직] 마크다운 링크 형식 [텍스트](URL)를 HTML 태그로 변환
+            // 모바일에서 누르기 편하게 Tailwind CSS로 예쁜 버튼/배지 스타일을 입힙니다.
+            let formattedText = text.replace(/\n/g, '<br>');
+
+            const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+            formattedText = formattedText.replace(markdownLinkRegex, function (match, linkText, url) {
+                return `
+            <a href="${url}" target="_blank" rel="noopener noreferrer" 
+               class="inline-flex items-center justify-center space-x-1 bg-rose-50 border border-rose-200 text-rose-600 font-semibold px-3 py-2 rounded-xl mt-2 text-xs hover:bg-rose-100 transition-all w-full shadow-sm">
+                <span><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> ${linkText}</span>
+            </a>
+        `;
+            });
+
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+            <div class="bg-rose-600 text-white p-3 rounded-lg rounded-tr-none shadow-sm max-w-[80%] text-sm leading-relaxed">
+                ${formattedText}
+            </div>
+        `;
+            } else {
+                messageDiv.innerHTML = `
+            <div class="bg-rose-100 text-rose-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-robot text-sm"></i>
+            </div>
+            <div class="bg-white text-slate-800 p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%] text-sm leading-relaxed border border-slate-100">
+                <div>${formattedText}</div>
+            </div>
+        `;
+            }
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // 자동 스크롤 하단 이동
+        }
+
+        // 로딩 인디케이터 표시
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.className = 'flex items-start space-x-2.5';
+            loadingDiv.innerHTML = `
+                <div class="bg-rose-100 text-rose-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%] border border-slate-100 flex items-center space-x-1 py-4 px-5">
+                    <span class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                    <span class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                    <span class="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                </div>
+            `;
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loading = document.getElementById('loading-indicator');
+            if (loading) loading.remove();
+        }
+
+        // 서버 통신 및 메시지 전송
+        async function sendMessage(event) {
+            event.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // 유저 대화 추가 및 UI 잠금
+            appendMessage('user', message);
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            showLoading();
+
+            try {
+                // 백엔드 API 호출 (상대경로 설정으로 같은 서버 구동 환경 대응)
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) throw new Error('서버와 통신에 실패했습니다.');
+
+                const data = await response.json();
+                removeLoading();
+                appendMessage('bot', data.reply);
+            } catch (error) {
+                removeLoading();
+                appendMessage('bot', '❌ 에러가 발생했습니다. 연결 상태를 확인한 후 다시 시도해 주세요.');
+                console.error(error);
+            } finally {
+                // UI 잠금 해제
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // 대화 내역 초기화
+        function clearChat() {
+            if (confirm("대화 내역을 모두 초기화하시겠습니까?")) {
+                chatBox.innerHTML = `
+                    <div class="flex items-start space-x-2.5">
+                        <div class="bg-rose-100 text-rose-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-robot text-sm"></i>
+                        </div>
+                        <div class="bg-white text-slate-800 p-3 rounded-lg rounded-tl-none shadow-sm max-w-[80%] text-sm leading-relaxed border border-slate-100">
+                            대화가 초기화되었습니다. 🩸 궁금한 점을 편하게 물어보세요!
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
